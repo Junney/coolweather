@@ -8,6 +8,14 @@ import org.litepal.crud.DataSupport;
  */
 public class County extends DataSupport {
 
+    public static County create(String countyName, String weatherId, int cityId) {
+        County county = new County();
+        county.setCountyName(countyName);
+        county.setWeatherId(weatherId);
+        county.setCityId(cityId);
+        return county;
+    }
+
     private int id;
     private String countyName;
     private String weatherId;

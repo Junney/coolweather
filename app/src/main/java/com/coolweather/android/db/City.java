@@ -8,6 +8,14 @@ import org.litepal.crud.DataSupport;
  */
 public class City extends DataSupport {
 
+    public static City create(String cityName, int cityCode, int provinceId) {
+        City city = new City();
+        city.setCityName(cityName);
+        city.setCityCode(cityCode);
+        city.setProvinceId(provinceId);
+        return city;
+    }
+
     private int id;
     private String cityName;
     private int cityCode;
