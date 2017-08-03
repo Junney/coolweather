@@ -8,14 +8,13 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.annimon.stream.Collectors;
-import com.annimon.stream.Stream;
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
 import com.coolweather.android.db.Province;
@@ -70,25 +69,28 @@ public class ChooseAreaFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        listView.setOnItemClickListener((parent, view, position, id) -> {
-            if (currLevel == LEVEL_PROVINCE) {
-                selectedProvince = provinceList.get(position);
-                queryCities();
-            } else if (currLevel == LEVEL_CITY) {
-                selectedCity = cityList.get(position);
-                queryCounties();
-            } else if (currLevel == LEVEL_COUNTY) {
-                String weatherId = countyList.get(position).getWeatherId();
-                if (getActivity() instanceof MainActivity) {
-                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weather_id", weatherId);
-                    startActivity(intent);
-                    getActivity().finish();
-                } else {
-                    WeatherActivity activity = (WeatherActivity) getActivity();
-                    activity.drawerLayout.closeDrawers();
-                    activity.swipeRefresh.setRefreshing(true);
-                    activity.requestWeather(weatherId);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if (currLevel == LEVEL_PROVINCE) {
+                    selectedProvince = provinceList.get(position);
+                    queryCities();
+                } else if (currLevel == LEVEL_CITY) {
+                    selectedCity = cityList.get(position);
+                    queryCounties();
+                } else if (currLevel == LEVEL_COUNTY) {
+                    String weatherId = countyList.get(position).getWeatherId();
+                    if (getActivity() instanceof MainActivity) {
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id", weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    } else {
+                        WeatherActivity activity = (WeatherActivity) getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.swipeRefresh.setRefreshing(true);
+                        activity.requestWeather(weatherId);
+                    }
                 }
             }
         });
@@ -110,11 +112,10 @@ public class ChooseAreaFragment extends Fragment {
         backButton.setVisibility(View.GONE);
         provinceList = DataSupport.findAll(Province.class);
         if (provinceList.size() > 0) {
-            dataList.clear();;
-            dataList.addAll(Stream.of(provinceList).map(Province::getProvinceName).collect(Collectors.toList()));
-//            for (Province province: provinceList) {
-//                dataList.add(province.getProvinceName());
-//            }
+            dataList.clear();
+            for (Province province: provinceList) {
+                dataList.add(province.getProvinceName());
+            }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);
             currLevel = LEVEL_PROVINCE;
@@ -130,10 +131,9 @@ public class ChooseAreaFragment extends Fragment {
         cityList = DataSupport.where("provinceid = ?", String.valueOf(selectedProvince.getId())).find(City.class);
         if (cityList.size() > 0) {
             dataList.clear();
-            dataList.addAll(Stream.of(cityList).map(City::getCityName).collect(Collectors.toList()));
-//            for (City city: cityList) {
-//                dataList.add(city.getCityName());
-//            }
+            for (City city: cityList) {
+                dataList.add(city.getCityName());
+            }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);
             currLevel = LEVEL_CITY;
@@ -150,10 +150,10 @@ public class ChooseAreaFragment extends Fragment {
         countyList = DataSupport.where("cityid = ?", String.valueOf(selectedCity.getId())).find(County.class);
         if (countyList.size() > 0) {
             dataList.clear();
-            dataList.addAll(Stream.of(countyList).map(County::getCountyName).collect(Collectors.toList()));
-//            for (County county: countyList) {
-//                dataList.add(county.getCountyName());
-//            }
+            //dataList.addAll(Stream.of(countyList).map(County::getCountyName).collect(Collectors.toList()));
+            for (County county: countyList) {
+                dataList.add(county.getCountyName());
+            }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);
             currLevel = LEVEL_COUNTY;
@@ -170,9 +170,12 @@ public class ChooseAreaFragment extends Fragment {
         HttpUtil.sendOKHttpRequest(address, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                getActivity().runOnUiThread(() -> {
-                    closeProgressDialog();
-                    Toast.makeText(getContext(), "加载失败。。。", Toast.LENGTH_SHORT).show();
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        closeProgressDialog();
+                        Toast.makeText(getContext(), "加载失败。。。", Toast.LENGTH_SHORT).show();
+                    }
                 });
             }
 
@@ -188,14 +191,17 @@ public class ChooseAreaFragment extends Fragment {
                     result = Utility.handleCountyResponse(responseText, selectedCity.getId());
                 }
                 if (result) {
-                    getActivity().runOnUiThread(() -> {
-                        closeProgressDialog();
-                        if ("province".equals(type)) {
-                            queryProvinces();
-                        } else if ("city".equals(type)) {
-                            queryCities();
-                        } else if ("county".equals(type)) {
-                            queryCounties();
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            closeProgressDialog();
+                            if ("province".equals(type)) {
+                                queryProvinces();
+                            } else if ("city".equals(type)) {
+                                queryCities();
+                            } else if ("county".equals(type)) {
+                                queryCounties();
+                            }
                         }
                     });
                 }
